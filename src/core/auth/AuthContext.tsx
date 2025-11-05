@@ -25,19 +25,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userRole, setUserRole] = useState<UserRole>(null); 
   const [loading, setLoading] = useState(true);
 
+  const MOCK = (import.meta as any).env?.VITE_MOCK === '1' || (import.meta as any).env?.VITE_MOCK === 'true';
+
     useEffect(() => {
+        if (MOCK) {
+            // Usuário e role falsos para desenvolvimento sem backend
+            const fakeUser = { uid: 'mock-uid', displayName: 'Usuário Mock' } as unknown as User;
+            setCurrentUser(fakeUser);
+            setUserRole((import.meta as any).env?.VITE_MOCK_ROLE === 'admin' ? 'admin' : 'professor');
+            setLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             if (user) {
                 setCurrentUser(user);
 
                 try {
-                    const idToken = await user.getIdToken(); 
+                    const idToken = await user.getIdToken();
 
-                    const role = await fetchUserRole(idToken); 
+                    const role = await fetchUserRole(idToken);
                     setUserRole(role);
                 } catch (error) {
                     console.error("Erro ao obter token ou role:", error);
-                    setUserRole(null); 
+                    setUserRole(null);
                 }
 
             } else {
@@ -48,7 +59,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         });
 
         return unsubscribe;
-    }, []);
+    }, [MOCK]);
 
   const value: AuthContextType = {
     currentUser,
